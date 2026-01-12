@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  passwordHash String
+  createdAt    DateTime     @default(now())
+
+  profile      Profile?
+  sessions     GameSession[]
+}
+
+model Profile {
+  userId            String   @id
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  username          String?  @unique
+  totalScore        Int      @default(0)
+  gamesPlayed       Int      @default(0)
+  questionsAnswered Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model GameSession {
+  id            String     @id @default(cuid())
+  userId        String
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime   @default(now())
+  endedAt       DateTime?
+  score         Int        @default(0)
+  questionCount Int        @default(0)
+
+  questions     Question[]
+}
+
+model Question {
+  id           String      @id @default(cuid())
+  sessionId    String
+  session      GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime @default(now())
+  order        Int
+
+  questionText String
+  options      Json
+  correctIndex Int
+  explanations Json
+  indicators   Json?
+
+  hash         String @unique
+
+  answeredAt   DateTime?
+  selectedIndex Int?
+  isCorrect    Boolean?
+
+  @@index([sessionId, order])
+}
